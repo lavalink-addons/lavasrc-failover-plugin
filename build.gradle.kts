@@ -2,7 +2,6 @@ plugins {
     kotlin("jvm") version "2.0.0"
     `maven-publish`
     signing
-    id("com.gradleup.nmcp") version "0.0.8"
 }
 
 group = "io.github.lavalink-addons"
@@ -69,6 +68,23 @@ publishing {
             }
         }
     }
+    repositories {
+        maven {
+            name = "MavenCentral"
+            url = uri("https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC")
+            credentials(HttpHeaderCredentials::class) {
+                name = "Authorization"
+                value = "Bearer " + (System.getenv("MAVEN_CENTRAL_TOKEN_ID")?.let { id ->
+                    System.getenv("MAVEN_CENTRAL_TOKEN_SECRET")?.let { secret ->
+                        java.util.Base64.getEncoder().encodeToString("$id:$secret".toByteArray())
+                    }
+                } ?: "")
+            }
+            authentication {
+                create<HttpHeaderAuthentication>("header")
+            }
+        }
+    }
 }
 
 signing {
@@ -77,14 +93,6 @@ signing {
     if (!gpgKey.isNullOrEmpty()) {
         useInMemoryPgpKeys(gpgKey, gpgPass)
         sign(publishing.publications["maven"])
-    }
-}
-
-nmcp {
-    publishAllPublicationsToCentralPortal("maven") {
-        username = System.getenv("MAVEN_CENTRAL_TOKEN_ID") ?: ""
-        password = System.getenv("MAVEN_CENTRAL_TOKEN_SECRET") ?: ""
-        publishingType = "AUTOMATIC"
     }
 }
 
