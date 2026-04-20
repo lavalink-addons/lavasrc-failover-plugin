@@ -1,3 +1,4 @@
+import java.util.Base64
 plugins {
     kotlin("jvm") version "2.0.0"
     `maven-publish`
@@ -76,7 +77,7 @@ publishing {
                 name = "Authorization"
                 value = "Bearer " + (System.getenv("MAVEN_CENTRAL_TOKEN_ID")?.let { id ->
                     System.getenv("MAVEN_CENTRAL_TOKEN_SECRET")?.let { secret ->
-                        java.util.Base64.getEncoder().encodeToString("$id:$secret".toByteArray())
+                        Base64.getEncoder().encodeToString("$id:$secret".toByteArray())
                     }
                 } ?: "")
             }
