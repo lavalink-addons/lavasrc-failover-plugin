@@ -1,0 +1,11 @@
+.gradle/
+build/
+*.class
+*.jar
+.idea/
+*.iml
+out/
+.kotlin/
+gradle/
+gradlew
+*.sh

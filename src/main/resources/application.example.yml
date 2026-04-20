@@ -1,0 +1,7 @@
+plugins:
+  failover:
+    enabled: true
+    logLevel: INFO       # INFO or DEBUG
+    failureThreshold: 3  # consecutive failures to mark source as DOWN
+    endpointEnabled: true
+    endpointPath: /v4/failover/health
