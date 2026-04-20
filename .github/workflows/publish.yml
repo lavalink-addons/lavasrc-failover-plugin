@@ -26,7 +26,7 @@ jobs:
           gradle-version: '8.8'
 
       - name: Build and Publish
-        run: gradle publish
+        run: gradle publishToSonatype closeAndReleaseSonatypeStagingRepository
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

@@ -1,8 +1,8 @@
-import java.util.Base64
 plugins {
     kotlin("jvm") version "2.0.0"
     `maven-publish`
     signing
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 group = "io.github.lavalink-addons"
@@ -69,21 +69,15 @@ publishing {
             }
         }
     }
+}
+
+nexusPublishing {
     repositories {
-        maven {
-            name = "MavenCentral"
-            url = uri("https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC")
-            credentials(HttpHeaderCredentials::class) {
-                name = "Authorization"
-                value = "Bearer " + (System.getenv("MAVEN_CENTRAL_TOKEN_ID")?.let { id ->
-                    System.getenv("MAVEN_CENTRAL_TOKEN_SECRET")?.let { secret ->
-                        Base64.getEncoder().encodeToString("$id:$secret".toByteArray())
-                    }
-                } ?: "")
-            }
-            authentication {
-                create<HttpHeaderAuthentication>("header")
-            }
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+            username = System.getenv("MAVEN_CENTRAL_TOKEN_ID") ?: ""
+            password = System.getenv("MAVEN_CENTRAL_TOKEN_SECRET") ?: ""
         }
     }
 }
