@@ -81,7 +81,7 @@ signing {
 }
 
 nmcp {
-    publishAllPublicationsToCentralPortal {
+    publish {
         username = System.getenv("MAVEN_CENTRAL_TOKEN_ID") ?: ""
         password = System.getenv("MAVEN_CENTRAL_TOKEN_SECRET") ?: ""
         publishingType = "AUTOMATIC"
