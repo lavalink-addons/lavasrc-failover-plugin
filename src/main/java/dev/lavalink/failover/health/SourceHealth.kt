@@ -18,7 +18,7 @@ class SourceHealth(val name: String) {
     val failureCount = AtomicLong(0)
     val consecutiveFailures = AtomicInteger(0)
 
-    private val recentFailures = ConcurrentLinkedDeque<FailureRecord>()
+    internal val recentFailures = ConcurrentLinkedDeque<FailureRecord>()
 
     @Volatile var status: SourceStatus = SourceStatus.HEALTHY
     @Volatile var lastSuccessMs: Long = 0L
