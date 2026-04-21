@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class HealthRegistry {
     private val log = LoggerFactory.getLogger(HealthRegistry::class.java)
-    private val sources = ConcurrentHashMap<String, SourceHealth>()
+    private val sources = ConcurrentHashMap<String, SourceHealth>(8)
     val knownSources = listOf("spotify", "deezer", "applemusic", "yandexmusic", "youtube", "soundcloud", "ytdlp")
 
     init {
@@ -18,28 +18,40 @@ class HealthRegistry {
 
     fun recordSuccess(source: String) {
         get(source).recordSuccess()
-        log.debug("[Failover] ✅ {} - success recorded", source)
+        log.debug("[Failover] {} success", source)
     }
 
     fun recordFailure(source: String, errorCode: Int, message: String) {
         val health = get(source)
         health.recordFailure(errorCode, message)
-        log.warn("[Failover] ❌ {} - failure (code={}, consecutive={}, status={})",
-            source, errorCode, health.consecutiveFailures.get(), health.status)
+        if (log.isWarnEnabled) {
+            log.warn("[Failover] {} failure code={} consecutive={} status={}", source, errorCode, health.consecutiveFailures.get(), health.status)
+        }
     }
 
     fun allHealth(): Map<String, Any> {
-        val sourceData = sources.values.sortedBy { it.name }.map { it.toMap() }
-        val overall = when {
-            sourceData.any { it["status"] == "DOWN" } -> "DEGRADED"
-            sourceData.any { it["status"] == "DEGRADED" } -> "DEGRADED"
-            else -> "HEALTHY"
+        val sourceData = sources.values.sortedBy { it.name }
+        var hasDown = false
+        var hasDegraded = false
+        var healthyCount = 0
+        var downCount = 0
+        var degradedCount = 0
+
+        val mapped = sourceData.map { s ->
+            when (s.status) {
+                SourceStatus.DOWN -> { hasDown = true; downCount++ }
+                SourceStatus.DEGRADED -> { hasDegraded = true; degradedCount++ }
+                SourceStatus.HEALTHY -> healthyCount++
+            }
+            s.toMap()
         }
+
+        val overall = if (hasDown || hasDegraded) "DEGRADED" else "HEALTHY"
         return mapOf(
             "overall" to overall,
-            "sources" to sourceData,
-            "activeSources" to sourceData.count { it["status"] == "HEALTHY" },
-            "downSources" to sourceData.count { it["status"] == "DOWN" }
+            "sources" to mapped,
+            "activeSources" to healthyCount,
+            "downSources" to downCount
         )
     }
 }

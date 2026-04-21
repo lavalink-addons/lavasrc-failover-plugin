@@ -1,13 +1,13 @@
 package dev.lavalink.failover.health
 
-import java.time.Instant
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 enum class SourceStatus { HEALTHY, DEGRADED, DOWN }
 
 data class FailureRecord(
-    val timestamp: Instant,
+    val timestampMs: Long,
     val errorCode: Int,
     val message: String
 )
@@ -17,17 +17,18 @@ class SourceHealth(val name: String) {
     val successCount = AtomicLong(0)
     val failureCount = AtomicLong(0)
     val consecutiveFailures = AtomicInteger(0)
-    val recentFailures = ArrayDeque<FailureRecord>(50)
+
+    private val recentFailures = ConcurrentLinkedDeque<FailureRecord>()
 
     @Volatile var status: SourceStatus = SourceStatus.HEALTHY
-    @Volatile var lastSuccess: Instant? = null
-    @Volatile var lastFailure: Instant? = null
+    @Volatile var lastSuccessMs: Long = 0L
+    @Volatile var lastFailureMs: Long = 0L
 
     fun recordSuccess() {
         totalRequests.incrementAndGet()
         successCount.incrementAndGet()
         consecutiveFailures.set(0)
-        lastSuccess = Instant.now()
+        lastSuccessMs = System.currentTimeMillis()
         status = SourceStatus.HEALTHY
     }
 
@@ -35,11 +36,11 @@ class SourceHealth(val name: String) {
         totalRequests.incrementAndGet()
         failureCount.incrementAndGet()
         val consecutive = consecutiveFailures.incrementAndGet()
-        lastFailure = Instant.now()
-        synchronized(recentFailures) {
-            if (recentFailures.size >= 50) recentFailures.removeFirst()
-            recentFailures.addLast(FailureRecord(Instant.now(), errorCode, message))
-        }
+        lastFailureMs = System.currentTimeMillis()
+
+        recentFailures.addLast(FailureRecord(lastFailureMs, errorCode, message))
+        if (recentFailures.size > 10) recentFailures.pollFirst()
+
         status = when {
             consecutive >= 5 -> SourceStatus.DOWN
             consecutive >= 2 -> SourceStatus.DEGRADED
@@ -49,7 +50,7 @@ class SourceHealth(val name: String) {
 
     fun successRate(): Double {
         val total = totalRequests.get()
-        return if (total == 0L) 100.0 else (successCount.get().toDouble() / total) * 100.0
+        return if (total == 0L) 100.0 else successCount.get().toDouble() / total * 100.0
     }
 
     fun toMap(): Map<String, Any?> = mapOf(
@@ -59,13 +60,11 @@ class SourceHealth(val name: String) {
         "successCount" to successCount.get(),
         "failureCount" to failureCount.get(),
         "consecutiveFailures" to consecutiveFailures.get(),
-        "successRate" to String.format("%.1f%%", successRate()),
-        "lastSuccess" to lastSuccess?.toString(),
-        "lastFailure" to lastFailure?.toString(),
-        "recentFailures" to synchronized(recentFailures) {
-            recentFailures.takeLast(10).map {
-                mapOf("timestamp" to it.timestamp.toString(), "errorCode" to it.errorCode, "message" to it.message)
-            }
+        "successRate" to "%.1f%%".format(successRate()),
+        "lastSuccess" to if (lastSuccessMs > 0) lastSuccessMs else null,
+        "lastFailure" to if (lastFailureMs > 0) lastFailureMs else null,
+        "recentFailures" to recentFailures.map {
+            mapOf("timestampMs" to it.timestampMs, "errorCode" to it.errorCode, "message" to it.message)
         }
     )
 }
