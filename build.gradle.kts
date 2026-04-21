@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "io.github.lavalink-addons"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()
@@ -94,4 +94,14 @@ signing {
 tasks.jar {
     archiveBaseName.set("lavasrc-failover-plugin")
     archiveVersion.set(version.toString())
+    manifest {
+        attributes(
+            "Name" to "lavasrc-failover-plugin",
+            "Version" to version,
+            "Lavalink-Plugin-Class" to "dev.lavalink.failover.FailoverPlugin",
+            "Lavalink-Plugin-Id" to "lavasrc-failover",
+            "Lavalink-Plugin-Version" to version,
+            "Lavalink-Plugin-Api-Version" to "4.0.0"
+        )
+    }
 }

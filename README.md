@@ -39,7 +39,7 @@ Copy it to your Lavalink `plugins/` folder.
 lavalink:
   plugins:
     - dependency: "dev.lavalink.failover:lavasrc-failover-plugin:1.0.0"
-      repository: "https://repo1.maven.org/maven2"
+      repository: "https://maven.pkg.github.com/doyimmiuink/lavasrc-failover-plugin"
 ```
 
 ## Configuration
