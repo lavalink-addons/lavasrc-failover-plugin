@@ -11,21 +11,21 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 @EnableConfigurationProperties(FailoverConfig::class)
-class FailoverPlugin {
+open class FailoverPlugin {
     private val log = LoggerFactory.getLogger(FailoverPlugin::class.java)
 
     @Bean
-    fun healthRegistry(): HealthRegistry {
-        log.info("[Failover] 🚀 LavaSrc Failover Plugin loaded!")
+    open fun healthRegistry(): HealthRegistry {
+        log.info("[Failover] LavaSrc Failover Plugin loaded!")
         return HealthRegistry()
     }
 
     @Bean
-    fun failoverInterceptor(registry: HealthRegistry) = FailoverTrackLoadInterceptor(registry)
+    open fun failoverInterceptor(registry: HealthRegistry) = FailoverTrackLoadInterceptor(registry)
 
     @Bean
-    fun failoverController(registry: HealthRegistry): FailoverController {
-        log.info("[Failover] 📡 REST available at /v4/failover/health")
+    open fun failoverController(registry: HealthRegistry): FailoverController {
+        log.info("[Failover] REST available at /v4/failover/health")
         return FailoverController(registry)
     }
 }
