@@ -9,7 +9,7 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -32,3 +32,23 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           MAVEN_CENTRAL_TOKEN_ID: ${{ secrets.MAVEN_CENTRAL_TOKEN_ID }}
           MAVEN_CENTRAL_TOKEN_SECRET: ${{ secrets.MAVEN_CENTRAL_TOKEN_SECRET }}
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=$(grep '^version = ' build.gradle.kts | sed 's/version = \"//;s/\"//')" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## lavasrc-failover-plugin v${{ steps.get_version.outputs.VERSION }}
+
+            ### Lavalink application.yml
+            ```yaml
+            - dependency: "io.github.lavalink-addons:lavasrc-failover-plugin:${{ steps.get_version.outputs.VERSION }}"
+              repository: "https://repo1.maven.org/maven2"
+            ```
+          draft: false
+          prerelease: false
